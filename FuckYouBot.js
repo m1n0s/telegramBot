@@ -5,26 +5,42 @@
     const TelegramBot = require('node-telegram-bot-api'),
           http = require('http'),
           request = require('request'),
-          fetch = require('node-fetch');;
+          fetch = require('node-fetch'),
+          API500px = require('500px'),
+          photos500 = new API500px('fxbA5gQpzkR3NskiYH8eJGjEm7zgWY4Qiu9KomVR');
 
     const token = '202042596:AAH70-eStPEor76bG3LQG0RY6lkElWBPIIc';
+
+    let photoURL = [];
+
+    photos500.photos.searchByTag('cat', {'sort': 'created_at', 'rpp': '20', 'image_size': '600'},  function(error, results) {
+        if (error) {
+            // Error!
+            return;
+        }
+        results.photos.forEach(item => photoURL.push(item.image_url));
+    });
 
     let botOptions = {
         polling: true
     };
 
-    fetch('https://api.github.com/users/m1n0s')
-        .then(function(res) {
-            return res.json();
-        }).then(function(json) {
-            console.log(json);
-    });
-
-    request('http://www.google.com?fff', function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            console.log(body); // Show the HTML for the Google homepage.
+    /*var options = {
+        url: 'https://api.github.com/users/m1n0s',
+        headers: {
+            'User-Agent': 'request'
         }
-    });
+    };
+
+    function callback(error, response, body) {
+        if (!error && response.statusCode == 200) {
+            var info = JSON.parse(body);
+            console.log(info.name);
+            //console.log(info.forks_count + " Forks");
+        }
+    }
+
+    request(options, callback);*/
 
     let botData;
     const bot = new TelegramBot(token, botOptions);
@@ -62,6 +78,17 @@
 
         if (messageText.match(/\/today/)) {
             sendMessageByBot(messageChatId, 'kurwa');
+        }
+
+        if (messageText.match(/\/photo/)) {
+            /*bot.sendPhoto({
+                chat_id: messageChatId,
+                caption: 'This is my test image',
+
+                // you can also send file_id here as string (as described in telegram bot api documentation)
+                photo: 'stock-photo-150348819.jpg'
+            });*/
+            sendMessageByBot(messageChatId, photoURL[Math.round(Math.random() * photoURL.length)]);
         }
 
         console.log(msg);
