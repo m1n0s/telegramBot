@@ -3,13 +3,28 @@
     'use strict';
 
     const TelegramBot = require('node-telegram-bot-api'),
-          http = require('http');
+          http = require('http'),
+          request = require('request'),
+          fetch = require('node-fetch');;
 
     const token = '202042596:AAH70-eStPEor76bG3LQG0RY6lkElWBPIIc';
 
     let botOptions = {
         polling: true
     };
+
+    fetch('https://api.github.com/users/m1n0s')
+        .then(function(res) {
+            return res.json();
+        }).then(function(json) {
+            console.log(json);
+    });
+
+    request('http://www.google.com?fff', function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            console.log(body); // Show the HTML for the Google homepage.
+        }
+    });
 
     let botData;
     const bot = new TelegramBot(token, botOptions);
@@ -56,5 +71,7 @@
     {
         bot.sendMessage(aChatId, aMessage, { caption: 'I\'m a cute bot!' });
     }
+
+    /*квестов? у них нет отдельных исходников, доставай qm-файлы из пакетника, открывай через ТГЕ*/
 
 })();
