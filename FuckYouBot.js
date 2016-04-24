@@ -6,24 +6,26 @@
           http = require('http'),
           request = require('request'),
           fetch = require('node-fetch'),
+          fs = require('fs'),
           API500px = require('500px'),
           photos500 = new API500px('fxbA5gQpzkR3NskiYH8eJGjEm7zgWY4Qiu9KomVR');
 
     const token = '202042596:AAH70-eStPEor76bG3LQG0RY6lkElWBPIIc';
 
-    let photoURL = [];
+    let photoData = [];
 
-    photos500.photos.searchByTag('cat', {'sort': 'created_at', 'rpp': '20', 'image_size': '600'},  function(error, results) {
+    photos500.photos.searchByTag('cat', {'sort': 'created_at', 'rpp': '50', 'image_size': '600'},  function(error, results) {
         if (error) {
             // Error!
             return;
         }
-        results.photos.forEach(item => photoURL.push(item.image_url));
+        results.photos.forEach(item => photoData.push({name: item.name, url: item.image_url}));
     });
 
     let botOptions = {
         polling: true
     };
+    const bot = new TelegramBot(token, botOptions);
 
     /*var options = {
         url: 'https://api.github.com/users/m1n0s',
@@ -42,8 +44,11 @@
 
     request(options, callback);*/
 
+    //var filename = './123.jpg';
+    //var filename = 'http://24gadget.ru/uploads/posts/2013-07/1374125688_samsung-ssd-840-evo.jpg';
+
     let botData;
-    const bot = new TelegramBot(token, botOptions);
+
 
     bot.getMe().then(me => {
         botData = me;
@@ -51,6 +56,8 @@
         console.log('My id is %s.', me.id);
         console.log('And my username is @%s.', me.username);
     });
+
+
 
     bot.on('text', msg => {
         let messageChatId = msg.chat.id,
@@ -81,14 +88,21 @@
         }
 
         if (messageText.match(/\/photo/)) {
-            /*bot.sendPhoto({
-                chat_id: messageChatId,
-                caption: 'This is my test image',
 
-                // you can also send file_id here as string (as described in telegram bot api documentation)
-                photo: 'stock-photo-150348819.jpg'
-            });*/
-            sendMessageByBot(messageChatId, photoURL[Math.round(Math.random() * photoURL.length)]);
+            let index = Math.round(Math.random() * photoData.length),
+                photo = 'tempPhoto' + messageChatId + messageDate + '.jpg';
+
+            request(photoData[index].url)
+                .pipe(
+                    fs.createWriteStream(photo)
+                        .on('finish', function(){
+                            bot
+                                .sendPhoto( messageChatId, photo, {caption: photoData[index].name})
+                                .then(()=>{
+                                    fs.unlinkSync(photo);
+                                });
+                        })
+                    );
         }
 
         console.log(msg);
