@@ -8,7 +8,10 @@
           fetch = require('node-fetch'),
           fs = require('fs'),
           API500px = require('500px'),
-          photos500 = new API500px('fxbA5gQpzkR3NskiYH8eJGjEm7zgWY4Qiu9KomVR');
+          photos500 = new API500px('fxbA5gQpzkR3NskiYH8eJGjEm7zgWY4Qiu9KomVR'),
+          MongoClient = require('mongodb').MongoClient,
+          assert = require('assert');
+
 
     const token = '202042596:AAH70-eStPEor76bG3LQG0RY6lkElWBPIIc';
 
@@ -56,6 +59,137 @@
         console.log('My id is %s.', me.id);
         console.log('And my username is @%s.', me.username);
     });
+
+    var ObjectId = require('mongodb').ObjectID,
+        url = 'mongodb://localhost:27017/test';
+
+    MongoClient.connect(url, function(err, db) {
+        assert.equal(null, err);
+        console.log("Connected correctly to server.");
+        db.close();
+    });
+
+/*
+    var insertDocument = function(db, callback) {
+        db.collection('usage').insertOne( {
+            "started" : 0
+        }, function(err, result) {
+            assert.equal(err, null);
+            console.log("Inserted a document into the restaurants collection.");
+            callback();
+        });
+    };
+
+    var findRestaurants = function(db, callback) {
+        var cursor =db.collection('usage').find( );
+        cursor.each(function(err, doc) {
+            assert.equal(err, null);
+            if (doc != null) {
+                console.dir(doc);
+            } else {
+                callback();
+            }
+        });
+    };
+
+    var updateRestaurants = function(db, callback) {
+        db.collection('usage').updateOne(
+            { "started" : 0 },
+            {
+                $set: { "cuisine": "American (New)" },
+                $currentDate: { "lastModified": true }
+            }, function(err, results) {
+                console.log(results);
+                callback();
+            });
+    };
+*/
+
+    var insertDocument = function(db, callback) {
+        db.collection('visits').insertOne( {
+            "username": "leo",
+            "visits" : 0
+        }, function(err, result) {
+            assert.equal(err, null);
+            console.log("Inserted a document into the restaurants collection.");
+            callback();
+        });
+    };
+
+    var findRestaurants = function(db, callback) {
+        var cursor =db.collection('visits').find( );
+        cursor.each(function(err, doc) {
+            assert.equal(err, null);
+            if (doc != null) {
+                console.dir(doc);
+            } else {
+                console.log('NOTHING FIND');
+                callback();
+            }
+        });
+    };
+
+    var updateRestaurants = function(db, callback) {
+        db.collection('visits').updateOne(
+            { "username": "leo" },
+            {
+                $set: { "visits": "1" }
+            }, function(err, results) {
+                console.log(results);
+                callback();
+            });
+    };
+
+    var removeRestaurants = function(db, callback) {
+        db.collection('restaurants1').deleteMany(
+            { "borough": "Manhattan" },
+            function(err, results) {
+                console.log(results);
+                callback();
+            }
+        );
+    };
+
+
+
+
+
+
+
+
+   /* MongoClient.connect(url, function(err, db) {
+        assert.equal(null, err);
+        insertDocument(db, function() {
+            db.close();
+        });
+    });*/
+
+   MongoClient.connect(url, function(err, db) {
+        assert.equal(null, err);
+
+        updateRestaurants(db, function() {
+            db.close();
+        });
+    });
+
+/*
+    MongoClient.connect(url, function(err, db) {
+        assert.equal(null, err);
+
+        removeRestaurants(db, function() {
+            db.close();
+        });
+    });
+*/
+
+    MongoClient.connect(url, function(err, db) {
+        assert.equal(null, err);
+        findRestaurants(db, function() {
+            console.log('nihua net');
+            db.close();
+        });
+    });
+
 
 
 
