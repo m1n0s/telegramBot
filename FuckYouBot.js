@@ -4,6 +4,7 @@
 
     const TelegramBot = require('node-telegram-bot-api'),
           http = require('http'),
+          log = console.log,
           request = require('request'),
           fetch = require('node-fetch'),
           fs = require('fs'),
@@ -61,91 +62,74 @@
     });
 
     var ObjectId = require('mongodb').ObjectID,
-        url = 'mongodb://localhost:27017/test';
+        url = 'mongodb://localhost:27017/visit';
 
     MongoClient.connect(url, function(err, db) {
-        assert.equal(null, err);
+        //assert.equal(null, err);
         console.log("Connected correctly to server.");
         db.close();
     });
 
-/*
-    var insertDocument = function(db, callback) {
-        db.collection('usage').insertOne( {
-            "started" : 0
-        }, function(err, result) {
-            assert.equal(err, null);
-            console.log("Inserted a document into the restaurants collection.");
-            callback();
-        });
-    };
 
-    var findRestaurants = function(db, callback) {
-        var cursor =db.collection('usage').find( );
-        cursor.each(function(err, doc) {
-            assert.equal(err, null);
-            if (doc != null) {
-                console.dir(doc);
+
+
+    const insertData = (db, callback, data) => {
+        db.collection('visits').insertOne( data, function(err, result) {
+            //assert.equal(err, null);
+            console.log("Inserted a data in VISITS.");
+            if ( typeof callback !== "function" ) {
+                console.error('callback is not a function');
             } else {
                 callback();
             }
         });
     };
 
-    var updateRestaurants = function(db, callback) {
-        db.collection('usage').updateOne(
-            { "started" : 0 },
-            {
-                $set: { "cuisine": "American (New)" },
-                $currentDate: { "lastModified": true }
-            }, function(err, results) {
-                console.log(results);
-                callback();
-            });
-    };
-*/
-
-    var insertDocument = function(db, callback) {
-        db.collection('visits').insertOne( {
-            "username": "leo",
-            "visits" : 0
-        }, function(err, result) {
-            assert.equal(err, null);
-            console.log("Inserted a document into the restaurants collection.");
-            callback();
-        });
-    };
-
-    var findRestaurants = function(db, callback) {
-        var cursor =db.collection('visits').find( );
+    const findData = (db, callback, query) => {
+        let cursor = db.collection('visits').find( query ),
+            result = [];
         cursor.each(function(err, doc) {
-            assert.equal(err, null);
+            //assert.equal(err, null);
             if (doc != null) {
                 console.dir(doc);
+                result.push(doc);
+                //result = Object.assign(result, doc);
             } else {
-                console.log('NOTHING FIND');
-                callback();
+                console.log('END SEARCH');
+                if ( typeof callback !== "function" ) {
+                    console.error('callback is not a function');
+                } else {
+                    callback(result);
+                }
             }
         });
     };
 
-    var updateRestaurants = function(db, callback) {
+    const updateData = (db, callback, target, values) => {
         db.collection('visits').updateOne(
-            { "username": "leo" },
+            target,
             {
-                $set: { "visits": "1" }
+                $set: values
             }, function(err, results) {
                 console.log(results);
-                callback();
+                if ( typeof callback !== "function" ) {
+                    console.error('callback is not a function');
+                } else {
+                    callback();
+                }
             });
     };
 
-    var removeRestaurants = function(db, callback) {
-        db.collection('restaurants1').deleteMany(
-            { "borough": "Manhattan" },
+    const removeAllData = (db, callback, query) => {
+        db.collection('visits').deleteMany(
+            query,
             function(err, results) {
                 console.log(results);
-                callback();
+                if ( typeof callback !== "function" ) {
+                    console.error('callback is not a function');
+                } else {
+                    callback();
+                }
             }
         );
     };
@@ -157,37 +141,40 @@
 
 
 
-   /* MongoClient.connect(url, function(err, db) {
-        assert.equal(null, err);
-        insertDocument(db, function() {
+    MongoClient.connect(url, function(err, db) {
+        //assert.equal(null, err);
+        let kurwa;
+
+        insertData(db, false, {"name": "leo", "visits" : 0});
+        removeAllData(db, false, {"name" : "leo"});
+        findData(db, (result) => {
+            doKurwa(result);
             db.close();
-        });
-    });*/
+        } , {});
+
+
+    });
+
+    const doKurwa = (suka) => log(suka);
+
 
    MongoClient.connect(url, function(err, db) {
-        assert.equal(null, err);
+        //assert.equal(null, err);
 
-        updateRestaurants(db, function() {
-            db.close();
-        });
+       //updateData(db, () => db.close(), {"name" : "leo"}, {"visits" : "over9000"} );
     });
 
-/*
-    MongoClient.connect(url, function(err, db) {
-        assert.equal(null, err);
 
-        removeRestaurants(db, function() {
-            db.close();
-        });
+    MongoClient.connect(url, function(err, db) {
+        //assert.equal(null, err);
+
+        //removeAllData(db, () => db.close(), {"name" : "leo"});
+        //findData(db, () => db.close(), {});
     });
-*/
 
     MongoClient.connect(url, function(err, db) {
-        assert.equal(null, err);
-        findRestaurants(db, function() {
-            console.log('nihua net');
-            db.close();
-        });
+        //assert.equal(null, err);
+        //findData(db, () => db.close(), {});
     });
 
 
@@ -202,6 +189,13 @@
             messageSurname = msg.from.last_name;
 
         if (messageText.match(/\/hello/)) {
+
+            /*MongoClient.connect(url, function(err, db) {
+                //assert.equal(null, err);
+                //insertData(db, () => db.close(), {"name": "leo", "visits" : 0});
+            });*/
+
+
             sendMessageByBot(messageChatId, 'Hello ' + messageName + '!');
         }
 
