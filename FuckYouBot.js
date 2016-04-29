@@ -2,19 +2,16 @@
 
     'use strict';
 
-    const TelegramBot = require('node-telegram-bot-api'),
+    const telegram = require('telegram-bot-api'),
           http = require('http'),
-          log = console.log,
           request = require('request'),
           fetch = require('node-fetch'),
           fs = require('fs'),
           API500px = require('500px'),
           photos500 = new API500px('fxbA5gQpzkR3NskiYH8eJGjEm7zgWY4Qiu9KomVR'),
           MongoClient = require('mongodb').MongoClient,
-          assert = require('assert');
-
-
-    const token = '202042596:AAH70-eStPEor76bG3LQG0RY6lkElWBPIIc';
+          assert = require('assert'),
+          emoji = require('node-emoji');;
 
     let photoData = [];
 
@@ -26,30 +23,19 @@
         results.photos.forEach(item => photoData.push({name: item.name, url: item.image_url}));
     });
 
-    let botOptions = {
-        polling: true
-    };
-    const bot = new TelegramBot(token, botOptions);
 
-    /*var options = {
-        url: 'https://api.github.com/users/m1n0s',
-        headers: {
-            'User-Agent': 'request'
+
+
+
+
+    const bot = new telegram({
+        token: '202042596:AAH70-eStPEor76bG3LQG0RY6lkElWBPIIc',
+        updates: {
+            enabled: true,
+            get_interval: 200
         }
-    };
+    });
 
-    function callback(error, response, body) {
-        if (!error && response.statusCode == 200) {
-            var info = JSON.parse(body);
-            console.log(info.name);
-            //console.log(info.forks_count + " Forks");
-        }
-    }
-
-    request(options, callback);*/
-
-    //var filename = './123.jpg';
-    //var filename = 'http://24gadget.ru/uploads/posts/2013-07/1374125688_samsung-ssd-840-evo.jpg';
 
     let botData;
 
@@ -71,6 +57,177 @@
     });
 
 
+/*
+
+
+    MongoClient.connect(url, function(err, db) {
+        //assert.equal(null, err);
+        let kurwa;
+
+        insertData(db, false, {"name": "leo", "visits" : 0});
+        removeAllData(db, false, {"name" : "leo"});
+        findData(db, (result) => {
+            doKurwa(result);
+            db.close();
+        } , {});
+
+
+    });
+
+    const doKurwa = (suka) => log(suka);
+*/
+
+
+   MongoClient.connect(url, function(err, db) {
+        //assert.equal(null, err);
+
+       //updateData(db, () => db.close(), {"name" : "leo"}, {"visits" : "over9000"} );
+    });
+
+
+    MongoClient.connect(url, function(err, db) {
+        //assert.equal(null, err);
+
+        //removeAllData(db, () => db.close(), {"name" : "leo"});
+        //findData(db, () => db.close(), {});
+    });
+
+    MongoClient.connect(url, function(err, db) {
+        //assert.equal(null, err);
+        //findData(db, () => db.close(), {});
+    });
+
+
+
+
+    bot.on('message', msg => {
+        let messageChatId = msg.chat.id,
+            messageText = msg.text,
+            messageDate = msg.date,
+            messageNick = msg.from.username,
+            messageName = msg.from.first_name,
+            messageSurname = msg.from.last_name;
+
+        if (messageText.match(/\/hello/)) {
+
+            MongoClient.connect(url, function(err, db) {
+                assert.equal(null, err);
+
+                findData(db, (result) => {
+
+                    if (result.length) {
+                        let visits = result[0].visits + 1
+
+                        updateData(db, () => db.close(), {"chatId" : messageChatId}, {"visits" : visits});
+                        sendMessageByBot(
+                            messageChatId,
+                            '`Hello ' + messageName + emoji.get('heart') + '!` This is your *' + visits + ordinalSuffixOf(visits) + '* _greeting_ to me!',
+                            'Markdown'
+                        );
+                    } else {
+                        insertData(db, () => db.close(), {"chatId" : messageChatId, "visits" : 1});
+                        sendMessageByBot(messageChatId, 'Hello ' + messageName + '! This is your first greeting to me!');
+                    }
+
+                } , {"chatId": messageChatId});
+            });
+
+
+            //sendMessageByBot(messageChatId, 'Hello ' + messageName + '!');
+        }
+
+        if (messageText === '/fuckleo' || messageText === '/fuckleo@leoslave_bot') {
+            sendMessageByBot(messageChatId, 'Oh! Leo is the best! So fuck you ' + messageName +' '+ messageSurname + '!');
+        }
+
+        if (messageText === '/love' || messageText === '/love@leoslave_bot') {
+            sendMessageByBot(messageChatId, 'Leo love\'s Sofi very much! Everybody knows it!');
+        }
+
+        if (messageText === '/football' || messageText === '/football@leoslave_bot') {
+            //sendMessageByBot(messageChatId, 'Dynamo Kyiv is the best of the best!');
+
+            var inlineKeyboard = {
+                    inline_keyboard: [
+                        [{
+                            text: 'Dynamo Kyiv ' + emoji.get('muscle'),
+                            callback_data: 'fcdk'
+                        }], [{
+                            text: 'Shakhtar Donetsk ' + emoji.get('joy'),
+                            callback_data: 'fcsd'
+                        }]
+                    ]
+            };
+
+
+            bot.sendMessage({
+                chat_id: messageChatId,
+                text: 'Who is the champion?',
+                reply_markup: JSON.stringify(inlineKeyboard)
+            })
+            .then(function(message) {
+                console.log(message);
+            })
+            .catch(function(err) {
+                console.log(err);
+            });
+        }
+
+        if (messageText.match(/\/today/)) {
+            sendMessageByBot(messageChatId, 'kurwa');
+        }
+
+        if (messageText.match(/\/photo/)) {
+
+            let index = Math.round(Math.random() * photoData.length),
+                photo = 'tempPhoto' + messageChatId + messageDate + '.jpg';
+
+            request(photoData[index].url)
+                .pipe(
+                    fs.createWriteStream(photo)
+                        .on('finish', function(){
+                            bot
+                                .sendPhoto({
+                                    chat_id: messageChatId,
+                                    caption: photoData[index].name,
+                                    photo: photo
+                                })
+                                .then(()=>{
+                                    fs.unlinkSync(photo);
+                                });
+                        })
+                    );
+        }
+
+
+        api.on('inline.query', function(message)
+        {
+            // Received inline query
+            console.log(message);
+        });
+
+        api.on('inline.result', function(message)
+        {
+            // Received chosen inline result
+            console.log(message);
+        });
+
+        api.on('inline.callback.query', function(message)
+        {
+            // New incoming callback query
+            console.log(message);
+        });
+
+        api.on('update', function(message)
+        {
+            // Generic update object
+            // Subscribe on it in case if you want to handle all possible
+            // event types in one callback
+            console.log(message);
+        });
+
+        console.log(msg);
+    });
 
 
     const insertData = (db, callback, data) => {
@@ -136,109 +293,27 @@
 
 
 
+    function sendMessageByBot(aChatId, aMessage, aParseMode) {
+        bot.sendMessage({
+            chat_id: aChatId,
+            text: aMessage,
+            parse_mode: aParseMode
+        });
+    }
 
-
-
-
-
-    MongoClient.connect(url, function(err, db) {
-        //assert.equal(null, err);
-        let kurwa;
-
-        insertData(db, false, {"name": "leo", "visits" : 0});
-        removeAllData(db, false, {"name" : "leo"});
-        findData(db, (result) => {
-            doKurwa(result);
-            db.close();
-        } , {});
-
-
-    });
-
-    const doKurwa = (suka) => log(suka);
-
-
-   MongoClient.connect(url, function(err, db) {
-        //assert.equal(null, err);
-
-       //updateData(db, () => db.close(), {"name" : "leo"}, {"visits" : "over9000"} );
-    });
-
-
-    MongoClient.connect(url, function(err, db) {
-        //assert.equal(null, err);
-
-        //removeAllData(db, () => db.close(), {"name" : "leo"});
-        //findData(db, () => db.close(), {});
-    });
-
-    MongoClient.connect(url, function(err, db) {
-        //assert.equal(null, err);
-        //findData(db, () => db.close(), {});
-    });
-
-
-
-
-    bot.on('text', msg => {
-        let messageChatId = msg.chat.id,
-            messageText = msg.text,
-            messageDate = msg.date,
-            messageNick = msg.from.username,
-            messageName = msg.from.first_name,
-            messageSurname = msg.from.last_name;
-
-        if (messageText.match(/\/hello/)) {
-
-            /*MongoClient.connect(url, function(err, db) {
-                //assert.equal(null, err);
-                //insertData(db, () => db.close(), {"name": "leo", "visits" : 0});
-            });*/
-
-
-            sendMessageByBot(messageChatId, 'Hello ' + messageName + '!');
+    function ordinalSuffixOf(i) {
+        var j = i % 10,
+            k = i % 100;
+        if (j === 1 && k !== 11) {
+            return 'st';
         }
-
-        if (messageText === '/fuckleo' || messageText === '/fuckleo@leoslave_bot') {
-            sendMessageByBot(messageChatId, 'Oh! Leo is the best! So fuck you ' + messageName +' '+ messageSurname + '!');
+        if (j === 2 && k !== 12) {
+            return 'nd';
         }
-
-        if (messageText === '/love' || messageText === '/love@leoslave_bot') {
-            sendMessageByBot(messageChatId, 'Leo love\'s Sofi very much! Everybody knows it!');
+        if (j === 3 && k !== 13) {
+            return 'rd';
         }
-
-        if (messageText === '/football' || messageText === '/football@leoslave_bot') {
-            sendMessageByBot(messageChatId, 'Dynamo Kyiv is the best of the best!');
-        }
-
-        if (messageText.match(/\/today/)) {
-            sendMessageByBot(messageChatId, 'kurwa');
-        }
-
-        if (messageText.match(/\/photo/)) {
-
-            let index = Math.round(Math.random() * photoData.length),
-                photo = 'tempPhoto' + messageChatId + messageDate + '.jpg';
-
-            request(photoData[index].url)
-                .pipe(
-                    fs.createWriteStream(photo)
-                        .on('finish', function(){
-                            bot
-                                .sendPhoto( messageChatId, photo, {caption: photoData[index].name})
-                                .then(()=>{
-                                    fs.unlinkSync(photo);
-                                });
-                        })
-                    );
-        }
-
-        console.log(msg);
-    });
-
-    function sendMessageByBot(aChatId, aMessage)
-    {
-        bot.sendMessage(aChatId, aMessage, { caption: 'I\'m a cute bot!' });
+        return 'th';
     }
 
     /*квестов? у них нет отдельных исходников, доставай qm-файлы из пакетника, открывай через ТГЕ*/
